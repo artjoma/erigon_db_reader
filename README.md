@@ -1,4 +1,4 @@
-## Ethereum logs extractor
+# Ethereum logs extractor
 
 This application extracting EVM logs from Erigon database(libmdbx) and store it Parquet binary format data file.
 Example: ```asset/sepolia_10000_500000_all_logs.parquet```
