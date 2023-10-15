@@ -1,0 +1,23 @@
+[package]
+name = "erigon_db_reader"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+env_logger = "0.10"
+log = "0.4"
+tokio = { version = "1", features = ["full"] }
+tokio-stream = "0.1"
+futures = "0.3"
+clap = { version = "4.4", features = ["derive", "env"] }
+ethers = "2.0.10"
+serde = { version = "1", default-features = false, features = ["derive"] }
+serde_cbor = "0.11"
+bytes = { version = "1", features = ["serde"] }
+byteorder = "1.4.3"
+rocket = { version = "0.5.0-rc.3", features = ["json"] }
+anyhow = "1.0"
+parquet = "47.0.0"
+
+#libmdbx = { git = "https://github.com/vorot93/libmdbx-rs", branch="master"}
+libmdbx = "=0.1.10"
