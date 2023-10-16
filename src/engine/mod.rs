@@ -10,18 +10,18 @@ use std::path::PathBuf;
 use std::sync::Arc;
 use tokio::time::Instant;
 
-pub struct Engine {
+pub struct SearchEngine {
     db_path: PathBuf,
     result_storage: Arc<ResultStorage>,
 }
 
 pub const LOG_CHUNK_SIZE: usize = 10_000;
 
-impl Engine {
+impl SearchEngine {
     pub fn new(db_path: PathBuf, result_storage: Arc<ResultStorage>) -> Self {
         info!("Db path:{}", db_path.to_str().unwrap());
 
-        Engine {
+        SearchEngine {
             db_path,
             result_storage,
         }
@@ -130,7 +130,7 @@ impl Engine {
 
 #[cfg(test)]
 mod test {
-    use crate::engine::Engine;
+    use crate::engine::SearchEngine;
     use crate::storage::ResultStorage;
     use crate::util::setup_log;
     use std::path::PathBuf;
@@ -142,7 +142,7 @@ mod test {
         let result_path = "/tmp";
         let db_path = "/home/art/dev/sepolia-chaindata/";
         let result_storage = Arc::new(ResultStorage::new(PathBuf::from(result_path)));
-        let engine = Arc::new(Engine::new(PathBuf::from(db_path), result_storage.clone()));
+        let engine = Arc::new(SearchEngine::new(PathBuf::from(db_path), result_storage.clone()));
 
         engine
             .execute_job("test-1".to_string(), 10_000, 3_000_000, None)

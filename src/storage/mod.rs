@@ -69,6 +69,21 @@ impl ResultStorage {
                 .set_compression(Compression::SNAPPY)
                 .build();
             let mut writer = SerializedFileWriter::new(file, schema, props.into()).unwrap();
+            // reuse
+            let mut block_n_col = Vec::with_capacity(LOG_CHUNK_SIZE);
+            let mut tx_n_col = Vec::with_capacity(LOG_CHUNK_SIZE);
+            let mut ctr_col = Vec::with_capacity(LOG_CHUNK_SIZE);
+            let mut op_code_col = Vec::with_capacity(LOG_CHUNK_SIZE);
+            let mut topic_0_col = Vec::with_capacity(LOG_CHUNK_SIZE);
+            let mut topic_0_def_level_col = Vec::with_capacity(LOG_CHUNK_SIZE);
+            let mut topic_1_col = Vec::with_capacity(LOG_CHUNK_SIZE);
+            let mut topic_1_def_level_col = Vec::with_capacity(LOG_CHUNK_SIZE);
+            let mut topic_2_col = Vec::with_capacity(LOG_CHUNK_SIZE);
+            let mut topic_2_def_level_col = Vec::with_capacity(LOG_CHUNK_SIZE);
+            let mut topic_3_col = Vec::with_capacity(LOG_CHUNK_SIZE);
+            let mut topic_3_def_level_col = Vec::with_capacity(LOG_CHUNK_SIZE);
+            let mut data_col = Vec::with_capacity(LOG_CHUNK_SIZE);
+            let mut data_def_level_col = Vec::with_capacity(LOG_CHUNK_SIZE);
 
             while let Some(chunk) = rcv.recv().await {
                 if chunk.is_none() {
@@ -76,20 +91,6 @@ impl ResultStorage {
                 }
                 let chunk = chunk.unwrap();
                 info!("[{}] Chunk size: {:?}", _job_id, chunk.txs.len());
-                let mut block_n_col = Vec::with_capacity(LOG_CHUNK_SIZE);
-                let mut tx_n_col = Vec::with_capacity(LOG_CHUNK_SIZE);
-                let mut ctr_col = Vec::with_capacity(LOG_CHUNK_SIZE);
-                let mut op_code_col = Vec::with_capacity(LOG_CHUNK_SIZE);
-                let mut topic_0_col = Vec::with_capacity(LOG_CHUNK_SIZE);
-                let mut topic_0_def_level_col = Vec::with_capacity(LOG_CHUNK_SIZE);
-                let mut topic_1_col = Vec::with_capacity(LOG_CHUNK_SIZE);
-                let mut topic_1_def_level_col = Vec::with_capacity(LOG_CHUNK_SIZE);
-                let mut topic_2_col = Vec::with_capacity(LOG_CHUNK_SIZE);
-                let mut topic_2_def_level_col = Vec::with_capacity(LOG_CHUNK_SIZE);
-                let mut topic_3_col = Vec::with_capacity(LOG_CHUNK_SIZE);
-                let mut topic_3_def_level_col = Vec::with_capacity(LOG_CHUNK_SIZE);
-                let mut data_col = Vec::with_capacity(LOG_CHUNK_SIZE);
-                let mut data_def_level_col = Vec::with_capacity(LOG_CHUNK_SIZE);
 
                 for _log_model in chunk.txs {
                     let (block_n, tx_n, logs) = _log_model;
@@ -98,28 +99,28 @@ impl ResultStorage {
                     ctr_col.push(ByteArray::from(logs.address.as_bytes()));
                     op_code_col.push(logs.topics.len() as i32);
 
-                    Self::save_topic(
+                    Self::populate_topic(
                         &mut topic_0_col,
                         &mut topic_0_def_level_col,
                         logs.topics.get(0),
                     );
-                    Self::save_topic(
+                    Self::populate_topic(
                         &mut topic_1_col,
                         &mut topic_1_def_level_col,
                         logs.topics.get(1),
                     );
-                    Self::save_topic(
+                    Self::populate_topic(
                         &mut topic_2_col,
                         &mut topic_2_def_level_col,
                         logs.topics.get(2),
                     );
-                    Self::save_topic(
+                    Self::populate_topic(
                         &mut topic_3_col,
                         &mut topic_3_def_level_col,
                         logs.topics.get(3),
                     );
 
-                    Self::save_binary(&mut data_col, &mut data_def_level_col, logs.data);
+                    Self::populate_binary(&mut data_col, &mut data_def_level_col, logs.data);
                 }
 
                 let mut row_group_writer = writer.next_row_group().unwrap();
@@ -186,6 +187,22 @@ impl ResultStorage {
                     .unwrap();
                 col_writer.close().unwrap();
                 row_group_writer.close().unwrap();
+
+                // free mem
+                block_n_col.clear();
+                tx_n_col.clear();
+                ctr_col.clear();
+                op_code_col.clear();
+                topic_0_col.clear();
+                topic_0_def_level_col.clear();
+                topic_1_col.clear();
+                topic_1_def_level_col.clear();
+                topic_2_col.clear();
+                topic_2_def_level_col.clear();
+                topic_3_col.clear();
+                topic_3_def_level_col.clear();
+                data_col.clear();
+                data_def_level_col.clear();
             }
 
             info!("[{}] Stop result writer.", job_id);
@@ -195,7 +212,7 @@ impl ResultStorage {
         (sender, worker)
     }
 
-    fn save_topic(col: &mut Vec<ByteArray>, def_level_col: &mut Vec<i16>, topic: Option<&H256>) {
+    fn populate_topic(col: &mut Vec<ByteArray>, def_level_col: &mut Vec<i16>, topic: Option<&H256>) {
         if let Some(data) = topic {
             col.push(ByteArray::from(data.as_bytes()));
             def_level_col.push(1_i16);
@@ -205,7 +222,7 @@ impl ResultStorage {
         }
     }
 
-    fn save_binary(col: &mut Vec<ByteArray>, def_level_col: &mut Vec<i16>, binary: Option<Bytes>) {
+    fn populate_binary(col: &mut Vec<ByteArray>, def_level_col: &mut Vec<i16>, binary: Option<Bytes>) {
         if let Some(data) = binary {
             if data.is_empty() {
                 col.push(ByteArray::from(vec![]));
