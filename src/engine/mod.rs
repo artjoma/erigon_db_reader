@@ -15,7 +15,7 @@ pub struct SearchEngine {
     result_storage: Arc<ResultStorage>,
 }
 
-pub const LOG_CHUNK_SIZE: usize = 10_000;
+pub const LOG_CHUNK_SIZE: usize = 1_000_000;
 
 impl SearchEngine {
     pub fn new(db_path: PathBuf, result_storage: Arc<ResultStorage>) -> Self {

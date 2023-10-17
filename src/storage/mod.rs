@@ -11,6 +11,7 @@ use parquet::schema::parser::parse_message_type;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
+use std::time::Instant;
 use tokio::spawn;
 use tokio::sync::mpsc;
 use tokio::sync::mpsc::Sender;
@@ -91,6 +92,7 @@ impl ResultStorage {
                 }
                 let chunk = chunk.unwrap();
                 info!("[{}] Chunk size: {:?}", _job_id, chunk.txs.len());
+                let now = Instant::now();
 
                 for _log_model in chunk.txs {
                     let (block_n, tx_n, logs) = _log_model;
@@ -203,6 +205,8 @@ impl ResultStorage {
                 topic_3_def_level_col.clear();
                 data_col.clear();
                 data_def_level_col.clear();
+
+                info!("[{}] Chunk write took:{}ms", _job_id, now.elapsed().as_millis());
             }
 
             info!("[{}] Stop result writer.", job_id);

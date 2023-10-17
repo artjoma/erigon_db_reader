@@ -15,7 +15,7 @@ use log::info;
 use std::sync::Arc;
 use crate::http::HttpApi;
 
-#[tokio::main]
+#[tokio::main(flavor = "multi_thread")]
 async fn main() {
     setup_log();
     info!("Start app");
